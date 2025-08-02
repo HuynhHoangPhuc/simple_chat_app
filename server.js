@@ -1,7 +1,5 @@
 import express from 'express';
 import { createServer } from 'node:http';
-import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { Server } from 'socket.io';
 
@@ -19,10 +17,10 @@ await db.exec(`
   );
 `);
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
+app.use(express.static("public"));
 
 app.get('/', (req, res) => {
-  res.sendFile(join(__dirname, 'index.html'));
+  res.sendFile("/index.html");
 });
 
 const insertMessageQuery = db.prepare('INSERT INTO messages (username, content) VALUES (?, ?)');
@@ -42,8 +40,8 @@ io.on('connection', (socket) => {
   });
 });
 
-server.listen(3000, () => {
-  console.log('server running at http://localhost:3000');
+server.listen(port, () => {
+  console.log(`server running at http://localhost:${port}`);
 });
 
 process.on('SIGTERM', async () => {
