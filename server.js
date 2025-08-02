@@ -5,6 +5,7 @@ import { dirname, join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { Server } from 'socket.io';
 
+const port = process.env.PORT || 3000;
 const app = express();
 const server = createServer(app);
 const db = new DatabaseSync('chat.db');
@@ -44,3 +45,12 @@ io.on('connection', (socket) => {
 server.listen(3000, () => {
   console.log('server running at http://localhost:3000');
 });
+
+process.on('SIGTERM', async () => {
+  console.log('SIGTERM signal received: gracefully shutting down')
+  if (server) {
+    server.close(() => {
+      console.log('HTTP server closed')
+    })
+  }
+})
