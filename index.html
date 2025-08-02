@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>Chat App</title>
+    <style>
+        body {
+            margin: 0;
+            padding-bottom: 3rem;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        #form {
+            background: rgba(0, 0, 0, 0.15);
+            padding: 0.25rem;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            height: 3rem;
+            box-sizing: border-box;
+            backdrop-filter: blur(10px);
+        }
+
+        #input {
+            border: none;
+            padding: 0 1rem;
+            flex-grow: 1;
+            border-radius: 2rem;
+            margin: 0.25rem;
+        }
+
+        #input:focus {
+            outline: none;
+        }
+
+        #form>button {
+            background: #333;
+            border: none;
+            padding: 0 1rem;
+            margin: 0.25rem;
+            border-radius: 3px;
+            outline: none;
+            color: #fff;
+        }
+
+        #messages {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        #messages>li {
+            padding: 0.5rem 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            width: 50vw;
+            border-radius: 1rem;
+            margin: 0.5rem;
+        }
+
+        @media (width >=48rem) {
+            #messages>li {
+                width: 30vw;
+            }
+        }
+
+        #login {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0 3rem;
+            flex-direction: column;
+        }
+
+        #login h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        #login p {
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+            text-align: center;
+        }
+
+        #loginForm {
+            display: flex;
+            flex-direction: column;
+            width: 300px;
+        }
+
+        #loginForm input {
+            padding: 0.5rem;
+            margin-bottom: 1rem;
+            border-radius: 2rem;
+            border: 1px solid #ccc;
+        }
+
+        #loginForm button {
+            padding: 0.5rem;
+            border-radius: 3px;
+            border: none;
+            background-color: #333;
+            color: white;
+            cursor: pointer;
+        }
+
+        #chat {
+            display: none;
+        }
+
+        #messages>li>b {
+            display: block;
+            font-weight: bold;
+        }
+
+        #messages>li>span {
+            flex-grow: 1;
+            word-break: break-word;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="login">
+        <h1>Socket.IO Chat</h1>
+        <p>Welcome to the chat application! Please enter your name to start chatting.</p>
+        <form id="loginForm" action="">
+            <input type="text" id="username" placeholder="Enter your name" required />
+            <button type="submit">Join Chat</button>
+        </form>
+    </div>
+
+    <div id="chat" style="display: none;">
+        <ul id="messages"></ul>
+        <form id="form" action="">
+            <input id="input" autocomplete="off" /><button>Send</button>
+        </form>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io({
+            auth: {
+                serverOffset: 0
+            }
+        });
+        let username;
+
+        const loginForm = document.getElementById('loginForm');
+        const loginSection = document.getElementById('login');
+        const usernameInput = document.getElementById('username');
+        const form = document.getElementById('form');
+        const input = document.getElementById('input');
+        const messages = document.getElementById('messages');
+        const usernameError = document.getElementById('usernameError');
+        const chatSection = document.getElementById('chat');
+
+        usernameInput.focus();
+
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (usernameInput.value.trim()) {
+                username = usernameInput.value.trim();
+                loginSection.style.display = 'none';
+                chatSection.style.display = 'block';
+                input.focus();
+                socket.emit('get all messages');
+            }
+        });
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (input.value) {
+                socket.emit('chat message', username, input.value);
+                input.value = '';
+            }
+        });
+
+        socket.on('chat message', (user, msg, serverOffset) => {
+            const item = document.createElement('li');
+            const userTag = document.createElement('b');
+            userTag.textContent = user;
+            const msgTag = document.createElement('span');
+            msgTag.textContent = msg;
+            item.appendChild(userTag);
+            item.appendChild(msgTag);
+
+            if (user === username) {
+                item.style.justifySelf = 'end';
+                item.style.backgroundColor = '#f8d7da'; // Light red for own messages
+                userTag.style.color = 'green';
+            } else {
+                item.style.justifySelf = 'start';
+                item.style.backgroundColor = '#d1e7dd'; // Light green for others' messages
+                userTag.style.color = 'red';
+            }
+
+            messages.appendChild(item);
+            window.scrollTo(0, document.body.scrollHeight);
+            socket.auth.serverOffset = serverOffset;
+        });
+    </script>
+</body>
+
+</html>
